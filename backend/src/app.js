@@ -16,7 +16,9 @@ const app = express()
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://full-back-pd8qinwp5-vishnu-kumars-projects-b65fb2a7.vercel.app"
+    "https://yourtube-backend.vercel.app",
+    // Add your frontend URL here once deployed
+    "https://yourtube-frontend.vercel.app" // We'll update this with actual URL
   ],
   credentials: true
 }));
