@@ -53,11 +53,28 @@ const getAllVideos = asyncHandler(async (req, res) => {
             }
         },
         {
-            $addFields: {
-                owner: { $first: "$ownerDetails" }
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "likes"
             }
         },
-        { $project: { ownerDetails: 0 } },
+        {
+            $addFields: {
+                owner: { $first: "$ownerDetails" },
+                likesCount: { $size: "$likes" },
+                // Only show if user is authenticated
+                isLiked: {
+                    $cond: {
+                        if: req.user?._id,
+                        then: { $in: [req.user._id, "$likes.likedBy"] },
+                        else: false
+                    }
+                }
+            }
+        },
+        { $project: { ownerDetails: 0, likes: 0 } },
         { $sort: sortConditions }
     ]
     
