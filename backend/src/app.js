@@ -17,8 +17,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://yourtube-backend.vercel.app",
-    // Add your frontend URL here once deployed
-    "https://yourtube-frontend.vercel.app" // We'll update this with actual URL
+    "https://yourtube-frontend.vercel.app" // Your actual frontend URL
   ],
   credentials: true
 }));
