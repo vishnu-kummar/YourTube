@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FaLock, FaUser } from 'react-icons/fa'; // Icons for the form inputs
-import { AiOutlineMail } from 'react-icons/ai'; // Email icon
+import { FaUser, FaLock } from 'react-icons/fa';
+import { AiOutlineMail } from 'react-icons/ai';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,52 +9,52 @@ const AuthPage = () => {
     setIsLogin(!isLogin);
   };
 
-  const formTitle = isLogin ? 'Login to Your Account' : 'Create a New Account';
+  const formTitle = isLogin ? 'Sign In to Your Account' : 'Create an Account';
   const buttonText = isLogin ? 'Sign In' : 'Sign Up';
-  const toggleText = isLogin ? "Don't have an account?" : 'Already have an account?';
-  const toggleLinkText = isLogin ? 'Sign Up' : 'Sign In';
 
   return (
-    <div className="auth-container">
-      <div className="auth-form-container">
-        <div className="auth-header">
-          <div className="auth-icon-wrapper">
-            <FaLock className="auth-icon" />
+    <div className="upload-container">
+      <div className="upload-form-container">
+        <div className="upload-header">
+          <div className="upload-icon">
+            <FaUser size={30} color="white" />
           </div>
           <h2>{formTitle}</h2>
+          <p>{isLogin ? 'Welcome back! Please enter your details.' : 'Join the community and start uploading videos.'}</p>
         </div>
-        <form className="auth-form">
+        
+        <form className="upload-form">
           {!isLogin && (
             <div className="form-group">
               <label htmlFor="username">Username</label>
-              <div className="input-with-icon">
-                <FaUser className="input-icon" />
-                <input type="text" id="username" placeholder="Enter your username" />
-              </div>
+              <input type="text" id="username" placeholder="Enter your username" />
             </div>
           )}
+          
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
-            <div className="input-with-icon">
-              <AiOutlineMail className="input-icon" />
-              <input type="email" id="email" placeholder="Enter your email" />
-            </div>
+            <input type="email" id="email" placeholder="Enter your email" />
           </div>
+          
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <div className="input-with-icon">
-              <FaLock className="input-icon" />
-              <input type="password" id="password" placeholder="Enter your password" />
-            </div>
+            <input type="password" id="password" placeholder="Enter your password" />
           </div>
-          <button type="submit" className="auth-submit-btn">
+          
+          <button type="submit" className="upload-submit-btn">
             {buttonText}
           </button>
         </form>
-        <div className="toggle-form-text">
-          <span>{toggleText} </span>
-          <button onClick={toggleForm} className="toggle-btn">
-            {toggleLinkText}
+
+        <div className="text-center mt-6">
+          <span className="text-gray-600">
+            {isLogin ? "Don't have an account?" : 'Already have an account?'}
+          </span>
+          <button
+            onClick={toggleForm}
+            className="text-purple-600 hover:text-purple-800 font-semibold ml-2"
+          >
+            {isLogin ? 'Sign Up' : 'Sign In'}
           </button>
         </div>
       </div>
@@ -62,4 +62,4 @@ const AuthPage = () => {
   );
 };
 
-export default AuthPage;  // fixed this time
+export default AuthPage;
