@@ -8,30 +8,30 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+
     // Build match conditions
-    const matchConditions = { isPublished: true }
-    
-    // Add text search if query is provided (using correct field names)
+    const matchConditions = { isPublished: true };
+
+    // Add text search if query is provided
     if (query) {
         matchConditions.$or = [
-            { Title: { $regex: query, $options: 'i' } },
-            { description: { $regex: query, $options: 'i' } }
-        ]
+            { title: { $regex: query, $options: 'i' } }, // Use "title" (case-sensitive, check schema)
+            { description: { $regex: query, $options: 'i' } },
+        ];
     }
-    
+
     // Add userId filter if provided
     if (userId && isValidObjectId(userId)) {
-        matchConditions.owner = new mongoose.Types.ObjectId(userId)
+        matchConditions.owner = new mongoose.Types.ObjectId(userId);
     }
-    
+
     // Build sort conditions
-    let sortConditions = { createdAt: -1 } // default sort
+    let sortConditions = { createdAt: -1 }; // default sort
     if (sortBy && sortType) {
-        sortConditions = { [sortBy]: sortType === 'desc' ? -1 : 1 }
+        sortConditions = { [sortBy]: sortType === 'desc' ? -1 : 1 };
     }
-    
+
     // Create aggregation pipeline
     const pipeline = [
         { $match: matchConditions },
@@ -46,51 +46,47 @@ const getAllVideos = asyncHandler(async (req, res) => {
                         $project: {
                             username: 1,
                             fullname: 1,
-                            avatar: 1
-                        }
-                    }
-                ]
-            }
+                            avatar: 1,
+                        },
+                    },
+                ],
+            },
         },
         {
             $lookup: {
                 from: "likes",
                 localField: "_id",
                 foreignField: "video",
-                as: "likes"
-            }
+                as: "likes",
+            },
         },
         {
             $addFields: {
                 owner: { $first: "$ownerDetails" },
                 likesCount: { $size: "$likes" },
-                // Only show if user is authenticated
                 isLiked: {
                     $cond: {
-                        if: req.user?._id,
-                        then: { $in: [req.user._id, "$likes.likedBy"] },
-                        else: false
-                    }
-                }
-            }
+                        if: { $and: [{ $ne: [req.user, null] }, { $ne: [req.user, undefined] }] }, // Check req.user exists
+                        then: { $in: [req.user?._id, "$likes.likedBy"] },
+                        else: false,
+                    },
+                },
+            },
         },
         { $project: { ownerDetails: 0, likes: 0 } },
-        { $sort: sortConditions }
-    ]
-    
+        { $sort: sortConditions },
+    ];
+
     // Execute aggregation with pagination
-    const videos = await Video.aggregatePaginate(
-        Video.aggregate(pipeline),
-        {
-            page: parseInt(page),
-            limit: parseInt(limit)
-        }
-    )
-    
+    const videos = await Video.aggregatePaginate(Video.aggregate(pipeline), {
+        page: parseInt(page),
+        limit: parseInt(limit),
+    });
+
     return res.status(200).json(
         new ApiResponse(200, videos, "Videos fetched successfully")
-    )
-})
+    );
+});
 
 const publishAVideo = asyncHandler(async (req, res) => {
     const { Title, description } = req.body

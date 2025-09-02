@@ -18,6 +18,9 @@ connectDB()
 
 
 // above code for vercel
+// When Vercel runs your backend API, connectDB() will be called in api/index.js.
+
+// No long-running server is started.
 
 
 
