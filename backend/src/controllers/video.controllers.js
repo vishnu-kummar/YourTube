@@ -111,15 +111,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     
     console.log("File paths:", { videoLocalPath, thumbnailLocalPath });
     
-    // Verify files exist
-    if (!fs.existsSync(videoLocalPath)) {
-        throw new ApiError(500, `Video file not found at: ${videoLocalPath}`);
-    }
-    
-    if (!fs.existsSync(thumbnailLocalPath)) {
-        throw new ApiError(500, `Thumbnail file not found at: ${thumbnailLocalPath}`);
-    }
-    
     try {
         // Upload to cloudinary
         const videoUpload = await uploadOnCloudinary(videoLocalPath);
@@ -146,6 +137,15 @@ const publishAVideo = asyncHandler(async (req, res) => {
             isPublished: true
         });
         
+        // Cleanup temp files after successful upload (optional)
+        try {
+            const fs = await import('fs');
+            if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
+            if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+        } catch (cleanupError) {
+            console.error("Cleanup error:", cleanupError);
+        }
+        
         return res.status(201).json(
             new ApiResponse(201, video, "Video published successfully")
         );
@@ -153,8 +153,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     } catch (error) {
         console.error("Video upload error:", error);
         
-        // Cleanup temp files on error
+        // Cleanup temp files on error (optional)
         try {
+            const fs = await import('fs');
             if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
             if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
         } catch (cleanupError) {

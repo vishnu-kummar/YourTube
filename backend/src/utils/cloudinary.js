@@ -50,33 +50,24 @@ const uploadOnCloudinary = async (localFilePath) => {
             resource_type: "auto"
         });
         
-        // File uploaded successfully
-        console.log("Uploaded to Cloudinary:", response.url);
-        
         // Try to delete local file (with error handling)
         try {
-            // Use dynamic import for serverless compatibility
             const fs = await import('fs');
             if (fs.existsSync(localFilePath)) {
                 fs.unlinkSync(localFilePath);
-                console.log("Local temp file deleted:", localFilePath);
             }
         } catch (deleteError) {
             console.warn("Could not delete local file:", deleteError.message);
-            // This is not a critical error, so we don't throw
         }
         
         return response;
         
     } catch (error) {
-        console.error("Cloudinary upload error:", error);
-        
         // Try to cleanup local file on error too
         try {
             const fs = await import('fs');
             if (fs.existsSync(localFilePath)) {
                 fs.unlinkSync(localFilePath);
-                console.log("Cleaned up local file after failed upload:", localFilePath);
             }
         } catch (deleteError) {
             console.warn("Could not cleanup local file after error:", deleteError.message);
