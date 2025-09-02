@@ -117,128 +117,137 @@ const registerUser = asyncHandler(async (req,res)=>{
 
 })
 
-const loginUser = asyncHandler(async (req,res)=>{
-    // req body -> firs get data from user ,  username/email ,   find user ,  password check, access and refresh token, send cookies
-    const{email, username, password} = req.body
+const loginUser = asyncHandler(async (req, res) => {
+    const { email, username, password } = req.body;
 
-
-    if(!(username || email)){
-        throw new ApiError(400,"username or email is required")
+    if (!(username || email)) {
+        throw new ApiError(400, "username or email is required");
     }
 
-    const user = await User.findOne({   // check why user as info is in db
-        $or: [{username},{email}]
-    })
+    const user = await User.findOne({
+        $or: [{ username }, { email }]
+    });
 
-    if(!user){
-        throw new ApiError(404,"User doesn't exists")
+    if (!user) {
+        throw new ApiError(404, "User doesn't exists");
     }
 
-    const isPasswordValid = await user.isPasswordCorrect(password)
+    const isPasswordValid = await user.isPasswordCorrect(password);
 
-    if(!isPasswordValid){
-        throw new ApiError(401,"Password Incorrect")
+    if (!isPasswordValid) {
+        throw new ApiError(401, "Password Incorrect");
     }
-    // then generate access and refresh token
-    const {refreshToken,accessToken} = await generateAccessAndRefreshTokens(user._id)
 
-    // then sendtoken in cokies
-   const loggedInUser = await  User.findById(user._id).
-   select("-password -refreshToken")
+    const { refreshToken, accessToken } = await generateAccessAndRefreshTokens(user._id);
 
-   const options ={
-        httpOnly:true,
-        secure:true
-   }
-   return res.status(200).cookie("accessToken",accessToken,options).cookie("refreshToken",refreshToken,options)
-   .json(
-    new ApiResponse(
-        200,{
-            user:loggedInUser,accessToken,refreshToken
-        },
-        "User loggedIn successfully"
-    )
-   )
-    
-})
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
+    // Updated cookie options for production
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Only secure in production
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Allow cross-origin in production
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: "/" // Ensure cookies are available for all paths
+    };
 
-//logout
-const logoutUser = asyncHandler(async(req, res) => {
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser,
+                    accessToken,
+                    refreshToken
+                },
+                "User loggedIn successfully"
+            )
+        );
+});
+
+// Update your logoutUser function as well
+const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
             $unset: {
-                refreshToken: 1 // this removes the field from document
+                refreshToken: 1
             }
         },
         {
             new: true
         }
-    )
+    );
 
     const options = {
         httpOnly: true,
-        secure: true
-    }
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/"
+    };
 
     return res
-    .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"))
-})
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "User logged Out"));
+});
 
 //Access token → Short-lived (used for quick authorization, expires quickly).
 //Refresh token → Long-lived (used to get a new access token without logging in again).
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!incomingRefreshToken) {
-        throw new ApiError(401, "unauthorized request")
+        throw new ApiError(401, "unauthorized request");
     }
 
     try {
         const decodedToken = jwt.verify(
             incomingRefreshToken,
             process.env.REFRESH_TOKEN_SECRET
-        )
-    
-        const user = await User.findById(decodedToken?._id)
-    
+        );
+
+        const user = await User.findById(decodedToken?._id);
+
         if (!user) {
-            throw new ApiError(401, "Invalid refresh token")
+            throw new ApiError(401, "Invalid refresh token");
         }
-    
+
         if (incomingRefreshToken !== user?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or used")
-            
+            throw new ApiError(401, "Refresh token is expired or used");
         }
-    
+
         const options = {
             httpOnly: true,
-            secure: true
-        }
-    
-        const {accessToken, newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
-    
-        return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", newRefreshToken, options)
-        .json(
-            new ApiResponse(
-                200, 
-                {accessToken, refreshToken: newRefreshToken},
-                "Access token refreshed"
-            )
-        )
-    } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid refresh token")
-    }
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 24 * 60 * 60 * 1000,
+            path: "/"
+        };
 
-})
+        // FIX THE TYPO: generateAccessAndRefereshTokens -> generateAccessAndRefreshTokens
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    { accessToken, refreshToken: newRefreshToken },
+                    "Access token refreshed"
+                )
+            );
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token");
+    }
+});
 
 const changeCurrentPassword = asyncHandler(async(req,res)=>{
     const {oldPassword , newPassword} = req.body
@@ -260,25 +269,26 @@ const getCurrentUser = asyncHandler(async (req,res)=>{
     return res.status(200).json(new ApiResponse(200,req.user,"current user fetched successfully"))
 })
 
-const updateAccountDetails = asyncHandler(async ()=>{
-    const {fullname,email} = req.body
+const updateAccountDetails = asyncHandler(async (req, res) => { // FIXED: Added req, res
+    const { fullname, email } = req.body;
 
-    if(!fullname || !email){
-        throw new ApiError(400,"All field are required")
+    if (!fullname || !email) {
+        throw new ApiError(400, "All fields are required"); // FIXED: typo
     }
 
-    const user = await User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
         {
-            $set:{
+            $set: {
                 fullname,
-                email:email
+                email: email
             }
         },
-        {new:true}
-    ).select("-password")
+        { new: true }
+    ).select("-password");
 
-    return res.status(200).json(new ApiResponse(200,user,"Account details updated successfully"))
-})
+    return res.status(200).json(new ApiResponse(200, user, "Account details updated successfully"));
+});
 
 const updateUserAvatar = asyncHandler(async(req, res) => {
     const avatarLocalPath = req.file?.path
