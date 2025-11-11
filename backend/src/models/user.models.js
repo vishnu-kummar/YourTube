@@ -40,12 +40,12 @@ coverImage:{
     type:String,
 },
 
-watchHistory:[  // for this we need to install "npm i mongoose-aggregate-paginate-v2"
-    {
-        type:mongoose.Schema.Types.ObjectId,
-        ref :"Video"
-    }
-],
+// watchHistory:[  // for this we need to install "npm i mongoose-aggregate-paginate-v2"
+//     {
+//         type:mongoose.Schema.Types.ObjectId,
+//         ref :"Video"
+//     }
+// ],
 
 password:{       // we will install bcrypt library : it help you to hash passwords  [npm i bcrypt]
     type: String,

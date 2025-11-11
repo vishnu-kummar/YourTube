@@ -10,6 +10,7 @@ import { verifyJWT } from "../middlewares/auth.middlewares.js";
 
 const router = Router()
 
+
 // let say koi user "/api/v1/users/register" type krta hai toh hum use controll denge userRouter ka (user.routes.js): jise below code handle krega
 // '/users' hit hote hi '/register' hit hoga , register ke through registerUser (jo ki user.controller.js me define hai) call hua
 // ab registerUser jo ki controller me define hai, wo function, ek response bhejega.

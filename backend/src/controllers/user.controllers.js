@@ -6,6 +6,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
+// Add this import at the top of user.controllers.js
+import { WatchHistory } from '../models/watchHistory.model.js'; // <-- NEW IMPORT
+
 const generateAccessAndRefreshTokens = async(userId)=>{
     try {
         const user = await User.findById(userId)
@@ -426,21 +429,90 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
     )
 })
 
-// all videos 
+// all videos [comting out because of adding function new getWatchHistory function]
+// const getWatchHistory = asyncHandler(async(req, res) => {
+//     const user = await User.aggregate([
+//         {
+//             $match: {
+//                 _id: new mongoose.Types.ObjectId(req.user._id)
+//             }
+//         },
+//         {
+//             $lookup: {
+//                 from: "videos",
+//                 localField: "watchHistory",
+//                 foreignField: "_id",
+//                 as: "watchHistory",
+//                 pipeline: [
+//                     {
+//                         $lookup: {
+//                             from: "users",
+//                             localField: "owner",
+//                             foreignField: "_id",
+//                             as: "owner",
+//                             pipeline: [
+//                                 {
+//                                     $project: {
+//                                         fullName: 1,
+//                                         username: 1,
+//                                         avatar: 1
+//                                     }
+//                                 }
+//                             ]
+//                         }
+//                     },
+//                     {
+//                         $addFields:{
+//                             owner:{
+//                                 $first: "$owner"
+//                             }
+//                         }
+//                     }
+//                 ]
+//             }
+//         }
+//     ])
+
+//     return res
+//     .status(200)
+//     .json(
+//         new ApiResponse(
+//             200,
+//             user[0].watchHistory,
+//             "Watch history fetched successfully"
+//         )
+//     )
+// })
+
+// Replace your existing getWatchHistory with this new one
 const getWatchHistory = asyncHandler(async(req, res) => {
-    const user = await User.aggregate([
+    const userId = req.user?._id;
+
+    if (!userId) {
+        throw new ApiError(401, "User not authenticated");
+    }
+
+    const historyVideos = await WatchHistory.aggregate([
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(req.user._id)
+                userId: new mongoose.Types.ObjectId(userId)
             }
         },
+        // Sort by recency (most recently watched first)
+        {
+            $sort: {
+                lastWatchedAt: -1 
+            }
+        },
+        // Lookup the actual video data
         {
             $lookup: {
                 from: "videos",
-                localField: "watchHistory",
+                localField: "videoId",
                 foreignField: "_id",
-                as: "watchHistory",
+                as: "videoDetails",
                 pipeline: [
+                    // De-normalize the owner details inside the video lookup
                     {
                         $lookup: {
                             from: "users",
@@ -458,30 +530,61 @@ const getWatchHistory = asyncHandler(async(req, res) => {
                             ]
                         }
                     },
+                    // Project the required video fields and set the owner
                     {
-                        $addFields:{
-                            owner:{
-                                $first: "$owner"
-                            }
+                        $project: {
+                            _id: 1,
+                            videoFile: 1,
+                            thumbnail: 1,
+                            Title: 1,
+                            description: 1,
+                            duration: 1,
+                            views: 1,
+                            createdAt: 1,
+                            owner: { $first: "$owner" }
                         }
                     }
                 ]
             }
+        },
+        // Flatten the array of videoDetails (there should only be one)
+        {
+            $addFields: {
+                video: { $first: "$videoDetails" }
+            }
+        },
+        // Project the final output (combining history data with video data)
+        {
+            $project: {
+                _id: "$video._id", // Use the video ID as the main ID
+                title: "$video.Title",
+                thumbnail: "$video.thumbnail",
+                duration: "$video.duration",
+                owner: "$video.owner",
+                watchDurationSeconds: 1, // Include history data
+                isCompleted: 1, // Include history data
+                lastWatchedAt: 1 // Include history data
+            }
         }
-    ])
+    ]);
 
+    // Check if history is empty
+    if (!historyVideos) {
+        return res.status(200).json(
+            new ApiResponse(200, [], "Watch history fetched successfully")
+        );
+    }
+    
     return res
     .status(200)
     .json(
         new ApiResponse(
             200,
-            user[0].watchHistory,
+            historyVideos,
             "Watch history fetched successfully"
         )
     )
 })
-
-
 
 
 
