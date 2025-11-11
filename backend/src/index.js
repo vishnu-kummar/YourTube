@@ -1,54 +1,26 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 import connectDB from "./db/index.js";
-import { app } from "./app.js";
 
 // Load env variables
 dotenv.config({
-  path: "./.env",
+  path: './.env'
 });
 
-const PORT = process.env.PORT || 8000;
-
-// Connect to DB and start server
+// Just connect to DB here (no app.listen)
 connectDB()
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`✅ Server is running on http://localhost:${PORT}`);
-      console.log("✅ MongoDB connected successfully");
-    });
+    console.log("✅ MongoDB connected successfully");
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection failed!", err);
+    console.error("❌ MongoDB connection failed", err);
   });
 
 
 
+// above code for vercel
+// When Vercel runs your backend API, connectDB() will be called in api/index.js.
 
-
-
-// import dotenv from 'dotenv';
-// import connectDB from "./db/index.js";
-
-// // Load env variables
-// dotenv.config({
-//   path: './.env'
-// });
-
-// // Just connect to DB here (no app.listen)
-// connectDB()
-//   .then(() => {
-//     console.log("✅ MongoDB connected successfully");
-//   })
-//   .catch((err) => {
-//     console.error("❌ MongoDB connection failed", err);
-//   });
-
-
-
-// // above code for vercel
-// // When Vercel runs your backend API, connectDB() will be called in api/index.js.
-
-// // No long-running server is started.
+// No long-running server is started.
 
 
 

@@ -8,7 +8,6 @@ import {
 } from "../controllers/video.controllers.js"
 import {verifyJWT} from "../middlewares/auth.middlewares.js"
 import {upload} from "../middlewares/multer.middlewares.js"
-import { updateWatchHistory } from "../controllers/video.controllers.js" // <-- Import the new controller function
 
 const router = Router();
 
@@ -16,18 +15,6 @@ const router = Router();
 router.route("/").get(getAllVideos); // Make video listing public
 
 router.route("/:videoId").get(getVideoById); // Make video viewing public
-
-
-// video.routes.js
-router.route("/").get(getAllVideos);
-
-// Specific routes FIRST
-router.route("/watch-update").patch(verifyJWT, updateWatchHistory);
-
-// Parameterized routes LAST
-router.route("/:videoId").get(getVideoById);
-
-
 
 // Protected routes (authentication required)
 router.route("/").post(
@@ -44,7 +31,6 @@ router.route("/").post(
     ]),
     publishAVideo
 );
-
 
 router.route("/:videoId").delete(verifyJWT, deleteVideo)
     .patch(verifyJWT, upload.single("thumbnail"));
