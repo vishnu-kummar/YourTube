@@ -1,47 +1,47 @@
-// import dotenv from "dotenv";
-// import connectDB from "./db/index.js";
-// import { app } from "./app.js";
-
-// // Load env variables
-// dotenv.config({
-//   path: "./.env",
-// });
-
-// const PORT = process.env.PORT || 8000;
-
-// // Connect to DB and start server
-// connectDB()
-//   .then(() => {
-//     app.listen(PORT, () => {
-//       console.log(`✅ Server is running on http://localhost:${PORT}`);
-//       console.log("✅ MongoDB connected successfully");
-//     });
-//   })
-//   .catch((err) => {
-//     console.error("❌ MongoDB connection failed!", err);
-//   });
-
-
-
-
-
-
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import connectDB from "./db/index.js";
+import { app } from "./app.js";
 
 // Load env variables
 dotenv.config({
-  path: './.env'
+  path: "./.env",
 });
 
-// Just connect to DB here (no app.listen)
+const PORT = process.env.PORT || 8000;
+
+// Connect to DB and start server
 connectDB()
   .then(() => {
-    console.log("✅ MongoDB connected successfully");
+    app.listen(PORT, () => {
+      console.log(`✅ Server is running on http://localhost:${PORT}`);
+      console.log("✅ MongoDB connected successfully");
+    });
   })
   .catch((err) => {
-    console.error("❌ MongoDB connection failed", err);
+    console.error("❌ MongoDB connection failed!", err);
   });
+
+
+
+
+
+
+// import dotenv from 'dotenv';
+// import connectDB from "./db/index.js";
+
+// // Load env variables
+// dotenv.config({
+//   path: './.env'
+// });
+
+// // Just connect to DB here (no app.listen)
+// connectDB()
+//   .then(() => {
+//     console.log("✅ MongoDB connected successfully");
+//   })
+//   .catch((err) => {
+//     console.error("❌ MongoDB connection failed", err);
+//   });
 
 
 
