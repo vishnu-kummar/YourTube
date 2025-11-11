@@ -211,27 +211,6 @@ export const apiService = {
     });
   },
 
-
-// ========== WATCH HISTORY METHODS (ADD THESE) ==========
-  
-  // Get user's watch history
-  getWatchHistory: async () => {
-    return makeRequest(`${API_BASE_URL}/users/history`);
-  },
-
-  // Update watch history progress
-  updateWatchHistory: async (videoId, currentTime) => {
-    return makeRequest(`${API_BASE_URL}/videos/watch-update`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        videoId, 
-        currentTime 
-      })
-    });
-  },
-
-
   // User profile
   getUserChannelProfile: async (username) => {
     return makeRequest(`${API_BASE_URL}/users/c/${username}`);

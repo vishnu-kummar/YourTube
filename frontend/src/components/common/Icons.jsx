@@ -22,14 +22,6 @@ const UserCheckIcon = () => <span>✅</span>;
 const AwardIcon = () => <span>🏆</span>;
 const SearchIcon = () => <span>🔍</span>;
 
-
-// 📢 NEW Icon: History/Clock Icon
-export const HistoryIcon = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-);
-
 // New SVG-based icons for Playlists
 const PencilIcon = ({ className = "", size = 16 }) => (
   <svg 
@@ -115,27 +107,6 @@ const MinusIcon = ({ className = "", size = 16 }) => (
   </svg>
 );
 
-
-const CheckCircleIcon = ({ className = "", size = 16 }) => (
-  <svg
-    className={className}
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10"></circle>
-    <path d="M9 12l2 2 4-4"></path>
-  </svg>
-);
-
-
-
-
 // Export all icons
 export {
   HomeIcon,
@@ -163,6 +134,5 @@ export {
   PlusIcon,
   MinusIcon,
   UserPlusIcon,
-  ListIcon,
-  CheckCircleIcon
+  ListIcon
 };
