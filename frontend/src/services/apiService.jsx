@@ -237,10 +237,7 @@ export const apiService = {
     return makeRequest(`${API_BASE_URL}/users/c/${username}`);
   },
 
-  // getWatchHistory: async () => {
-  //   return makeRequest(`${API_BASE_URL}/users/history`);
-  // },
-
+ 
   updateUserAvatar: async (formData) => {
     return makeRequest(`${API_BASE_URL}/users/avatar`, {
       method: 'PATCH',
