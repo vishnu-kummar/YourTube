@@ -8,6 +8,7 @@ import {
 } from "../controllers/video.controllers.js"
 import {verifyJWT} from "../middlewares/auth.middlewares.js"
 import {upload} from "../middlewares/multer.middlewares.js"
+import { updateWatchHistory } from "../controllers/video.controllers.js" // <-- Import the new controller function
 
 const router = Router();
 
@@ -31,6 +32,9 @@ router.route("/").post(
     ]),
     publishAVideo
 );
+
+// Add the new route for updating watch history
+router.route("/watch-update").patch(verifyJWT, updateWatchHistory); // <-- NEW ROUTE
 
 router.route("/:videoId").delete(verifyJWT, deleteVideo)
     .patch(verifyJWT, upload.single("thumbnail"));
