@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 // Corrected paths for better project structure compatibility
-import { apiService } from 'services/apiService'; 
-import { UploadIcon } from 'components/common/Icons';
+ import { apiService } from '../../services/apiService';
+ import { UploadIcon } from '../common/Icons';
 
 const VideoUpload = () => {
   const [formData, setFormData] = useState({
