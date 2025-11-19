@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import Navbar from './components/common/Navbar';
@@ -8,7 +7,8 @@ import VideoPlayer from './components/video/VideoPlayer';
 import VideoUpload from './components/video/VideoUpload';
 import Dashboard from './components/dashboard/Dashboard';
 import CommentSection from './components/video/CommentSection';
-import Playlists from './components/video/Playlists'; // Added Playlists component
+import Playlists from './components/video/Playlists';
+import WatchHistory from './components/video/WatchHistory'; // NEW IMPORT
 import { PlayCircleIcon, UploadIcon } from './components/common/Icons';
 import './App.css';
 
@@ -23,15 +23,20 @@ const App = () => {
 
   const handleComment = (video, updateCallback) => {
     setCommentVideo(video);
-    setCommentUpdateCallback(() => updateCallback); // Store the callback
+    setCommentUpdateCallback(() => updateCallback);
     setShowCommentSection(true);
   };
 
   const handleCommentsUpdate = (newCommentsCount) => {
-    // Update the comment count in the video card
     if (commentUpdateCallback) {
       commentUpdateCallback(newCommentsCount);
     }
+  };
+
+  // Handle video selection from any component
+  const handleVideoSelect = (video) => {
+    setSelectedVideo(video);
+    setShowVideoPlayer(true);
   };
 
   if (loading) {
@@ -63,49 +68,54 @@ const App = () => {
         {activeTab === 'home' && (
           <VideoList 
             onLike={(videoId) => console.log('Like video:', videoId)}
-            onPlay={(video) => {
-              setSelectedVideo(video);
-              setShowVideoPlayer(true);
-            }}
+            onPlay={handleVideoSelect}
             onComment={handleComment}
             user={user}
           />
+        )}
+        
+        {activeTab === 'history' && user && (
+          <WatchHistory onVideoSelect={handleVideoSelect} />
         )}
         
         {activeTab === 'upload' && user && <VideoUpload />}
        
         {activeTab === 'playlists' && user && <Playlists user={user} />} 
 
-         {activeTab === 'dashboard' && user && <Dashboard user={user} />}
+        {activeTab === 'dashboard' && user && <Dashboard user={user} />}
         
-        {(activeTab === 'upload' || activeTab === 'dashboard' || activeTab === 'playlists') && !user && (
+        {/* Show auth required for protected routes when not logged in */}
+        {['upload', 'dashboard', 'playlists', 'history'].includes(activeTab) && !user && (
           <div className="auth-required">
             <div className="auth-required-content">
               <div className="auth-required-icon">
                 <UploadIcon />
               </div>
-              <h3>Ready to Share?</h3>
+              <h3>Authentication Required</h3>
               <p>
-                Join our community to upload, manage playlists, and share your amazing videos with the world
+                Please login to access {activeTab === 'history' ? 'your watch history' : 'this feature'}
               </p>
               <button
                 onClick={() => setActiveTab('auth')}
                 className="auth-required-btn"
               >
-                🚀 Get Started
+                🚀 Login Now
               </button>
             </div>
           </div>
         )}
       </main>
       
+      {/* Video Player Modal */}
       {showVideoPlayer && (
         <VideoPlayer 
           video={selectedVideo} 
+          user={user}
           onClose={() => setShowVideoPlayer(false)} 
         />
       )}
       
+      {/* Comment Section Modal */}
       {showCommentSection && (
         <div className="comment-section-overlay">
           <div className="comment-section-modal">

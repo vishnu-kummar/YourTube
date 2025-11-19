@@ -1,6 +1,14 @@
 import React from 'react';
 import { HomeIcon, UploadIcon, BarChartIcon, LogOutIcon, UserIcon, PlayCircleIcon, ListIcon } from './Icons';
 
+// Add History Icon
+const HistoryIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 const Navbar = ({ user, onLogout, activeTab, setActiveTab }) => (
   <nav className="navbar">
     <div className="nav-container">
@@ -20,22 +28,31 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab }) => (
             <HomeIcon />
             <span>Home</span>
           </button>
+          
           {user && (
             <>
+              <button 
+                onClick={() => setActiveTab('history')}
+                className={activeTab === 'history' ? 'nav-btn active' : 'nav-btn'}
+              >
+                <HistoryIcon />
+                <span>History</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('playlists')}
+                className={activeTab === 'playlists' ? 'nav-btn active' : 'nav-btn'}
+              >
+                <ListIcon />
+                <span>Playlists</span>
+              </button>
+
               <button 
                 onClick={() => setActiveTab('upload')}
                 className={activeTab === 'upload' ? 'nav-btn active' : 'nav-btn'}
               >
                 <UploadIcon />
                 <span>Upload</span>
-              </button>
-              
-                <button 
-                onClick={() => setActiveTab('playlists')}
-                className={activeTab === 'playlists' ? 'nav-btn active' : 'nav-btn'}
-              >
-                <ListIcon />
-                <span>Playlists</span>
               </button>
 
               <button 
@@ -45,8 +62,6 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab }) => (
                 <BarChartIcon />
                 <span>Dashboard</span>
               </button>
-              
-              
             </>
           )}
         </div>

@@ -112,6 +112,27 @@ export const apiService = {
     }
   },
 
+
+
+  getWatchHistory: async () => {
+    return makeRequest(`${API_BASE_URL}/users/history`);
+  },
+
+  // Update watch history progress
+  updateWatchHistory: async (videoId, currentTime) => {
+    return makeRequest(`${API_BASE_URL}/videos/watch-update`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        videoId, 
+        currentTime 
+      })
+    });
+  },
+
+
+
+
   getUserSubscriptions: async (userId) => {
     if (!userId) {
       console.error('getUserSubscriptions: userId is required');
@@ -216,9 +237,9 @@ export const apiService = {
     return makeRequest(`${API_BASE_URL}/users/c/${username}`);
   },
 
-  getWatchHistory: async () => {
-    return makeRequest(`${API_BASE_URL}/users/history`);
-  },
+  // getWatchHistory: async () => {
+  //   return makeRequest(`${API_BASE_URL}/users/history`);
+  // },
 
   updateUserAvatar: async (formData) => {
     return makeRequest(`${API_BASE_URL}/users/avatar`, {

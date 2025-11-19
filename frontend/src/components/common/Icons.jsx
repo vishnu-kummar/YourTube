@@ -6,6 +6,7 @@ const BarChartIcon = () => <span>📊</span>;
 const LogOutIcon = () => <span>🚪</span>;
 const UserIcon = () => <span>👤</span>;
 const PlayCircleIcon = () => <span>▶️</span>;
+const CheckCircleIcon = () => <span>▶️</span>;
 const PlayIcon = () => <span>▶️</span>;
 const EyeIcon = () => <span>👁️</span>;
 const ClockIcon = () => <span>⏰</span>;
@@ -134,5 +135,6 @@ export {
   PlusIcon,
   MinusIcon,
   UserPlusIcon,
-  ListIcon
+  ListIcon,
+  CheckCircleIcon
 };
