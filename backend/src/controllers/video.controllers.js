@@ -5,8 +5,7 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
-import { WatchHistory } from '../models/WatchHistory.model.js';
-import fs from 'fs'; // <-- FIXED: Static import for file system operations
+import { WatchHistory } from '../models/WatchHistory.model.js'; // Added import for WatchHistory
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -17,7 +16,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     // Add text search if query is provided
     if (query) {
         matchConditions.$or = [
-            { title: { $regex: query, $options: 'i' } },
+            { Title: { $regex: query, $options: 'i' } },
             { description: { $regex: query, $options: 'i' } },
         ];
     }
@@ -91,13 +90,13 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    // Renamed 'Title' to 'title' for schema consistency
-    const { title, description } = req.body; 
     
-    // console.log("Files received:", req.files);
-    // console.log("Body:", { title, description });
+    const { Title, description } = req.body; 
     
-    if (!title || !description) {
+    console.log("Files received:", req.files);
+    console.log("Body:", { title, description }); // Updated console log
+    
+    if (!Title || !description) {
         throw new ApiError(400, "Title and description are required");
     }
     
@@ -112,7 +111,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const videoLocalPath = req.files.videoFile[0].path;
     const thumbnailLocalPath = req.files.thumbnail[0].path;
     
-    // console.log("File paths:", { videoLocalPath, thumbnailLocalPath });
+    console.log("File paths:", { videoLocalPath, thumbnailLocalPath });
     
     try {
         // Upload to cloudinary
@@ -127,13 +126,13 @@ const publishAVideo = asyncHandler(async (req, res) => {
             throw new ApiError(500, "Error uploading thumbnail to Cloudinary");
         }
         
-        // console.log("Cloudinary uploads successful");
+        console.log("Cloudinary uploads successful");
         
         // Create video document
         const video = await Video.create({
             videoFile: videoUpload.url,
             thumbnail: thumbnailUpload.url,
-            title, // Used 'title'
+            Title,
             description,
             duration: videoUpload.duration || 0,
             owner: req.user._id,
@@ -141,7 +140,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         });
         
         // Cleanup temp files after successful upload (optional)
-        // const fs = await import('fs'); // REMOVED DYNAMIC IMPORT
+        const fs = await import('fs');
         if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
         if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
         
@@ -153,17 +152,15 @@ const publishAVideo = asyncHandler(async (req, res) => {
         console.error("Video upload error:", error);
         
         // Cleanup temp files on error (optional)
-        // const fs = await import('fs'); // REMOVED DYNAMIC IMPORT
+        const fs = await import('fs');
         if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
         if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
         
-        // Note: It's better to pass the original error message unless it's sensitive
         throw new ApiError(500, error.message || "Video upload failed");
     }
 });
 
-// RE-IMPLEMENTED: This function is for fetching video details and incrementing views.
-// Updated getVideoById function for video.controllers.js
+
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
 
@@ -183,35 +180,6 @@ const getVideoById = asyncHandler(async (req, res) => {
         { $inc: { views: 1 } },
         { new: true }
     );
-
-    // If user is authenticated, update watch history
-    if (req.user) {
-        const userId = req.user._id;
-        
-        // 1. Get current time (we assume the frontend will send a request with time later,
-        // but for now, we just create the record on first view/page load)
-        
-        // 2. Find and Update/Create the WatchHistory document (The CORE LOGIC)
-        // We only set the lastWatchedAt timestamp on initial load
-        await WatchHistory.findOneAndUpdate(
-            { userId, videoId }, // Query: Find by user and video
-            {
-                $set: {
-                    lastWatchedAt: new Date(),
-                },
-                // If the record doesn't exist, create it
-                $setOnInsert: {
-                    userId: userId,
-                    videoId: videoId,
-                    watchDurationSeconds: 0, // Initialize
-                    isCompleted: false, // Initialize
-                }
-            },
-            { 
-                upsert: true, // Create if not found
-            }
-        );
-    }
 
     // Aggregate video details with owner and likes info
     const video = await Video.aggregate([
@@ -293,7 +261,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     // Delete the video
     await Video.findByIdAndDelete(videoId)
     
-    // Clean up records in the new WatchHistory collection
+    // 🛑 CORRECTED: Clean up records in the new WatchHistory collection
     await WatchHistory.deleteMany({ videoId }); 
     
     // If you need to clean up the deprecated User.watchHistory array as well, uncomment this:
@@ -409,3 +377,4 @@ export {
     togglePublishStatus,
     updateWatchHistory // <-- Exported
 }
+

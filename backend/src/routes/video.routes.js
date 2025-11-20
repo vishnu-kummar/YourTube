@@ -4,41 +4,42 @@ import {
     getAllVideos,
     getVideoById,
     publishAVideo,
-    togglePublishStatus,     
+    togglePublishStatus,
+    updateWatchHistory     
 } from "../controllers/video.controllers.js"
 import {verifyJWT} from "../middlewares/auth.middlewares.js"
 import {upload} from "../middlewares/multer.middlewares.js"
-import { updateWatchHistory } from "../controllers/video.controllers.js" // <-- Import the new controller function
 
 const router = Router();
 
-// Public routes (no authentication required)
-router.route("/").get(getAllVideos); // Make video listing public
+// ============================================
+// CRITICAL: ROUTE ORDER MATTERS!!!
+// Static/specific routes MUST come BEFORE dynamic /:param routes
+// ============================================
 
-router.route("/:videoId").get(getVideoById); // Make video viewing public
+// 1. GET all videos (Public)
+router.route("/").get(getAllVideos);
 
-// Protected routes (authentication required)
+// 2. POST upload video (Protected) - MUST be on "/" path
 router.route("/").post(
-    verifyJWT, // Only for uploading
+    verifyJWT,
     upload.fields([
-        {
-            name: "videoFile",
-            maxCount: 1,
-        },
-        {
-            name: "thumbnail", 
-            maxCount: 1,
-        },
+        { name: "videoFile", maxCount: 1 },
+        { name: "thumbnail", maxCount: 1 }
     ]),
     publishAVideo
 );
 
-// Add the new route for updating watch history
-router.route("/watch-update").patch(verifyJWT, updateWatchHistory); // <-- NEW ROUTE
+// 3. PATCH watch history (Protected) - BEFORE /:videoId
+router.route("/watch-update").patch(verifyJWT, updateWatchHistory);
 
-router.route("/:videoId").delete(verifyJWT, deleteVideo)
-    .patch(verifyJWT, upload.single("thumbnail"));
-
+// 4. PATCH toggle publish (Protected) - BEFORE general /:videoId
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 
-export default router
+// 5. Dynamic /:videoId routes (MUST BE LAST)
+router.route("/:videoId")
+    .get(getVideoById)                      // Public - view video
+    .delete(verifyJWT, deleteVideo)         // Protected - delete video
+    .patch(verifyJWT, upload.single("thumbnail")); // Protected - update thumbnail
+
+export default router;
