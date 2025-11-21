@@ -89,14 +89,21 @@ const getAllVideos = asyncHandler(async (req, res) => {
     );
 });
 
+// COPY THIS ENTIRE FUNCTION and replace your publishAVideo in video.controllers.js
+
 const publishAVideo = asyncHandler(async (req, res) => {
+    // Get title from request body - handle both cases from frontend
+    // Frontend might send "title" or "Title"
+    const videoTitle = req.body.Title || req.body.title;
+    const { description } = req.body;
     
-    const { Title, description } = req.body; 
+    console.log("=== PUBLISH VIDEO ===");
+    console.log("Request body:", req.body);
+    console.log("Video Title:", videoTitle);
+    console.log("Description:", description);
     
-    console.log("Files received:", req.files);
-    console.log("Body:", { title, description }); // Updated console log
-    
-    if (!Title || !description) {
+    // Validation
+    if (!videoTitle || !description) {
         throw new ApiError(400, "Title and description are required");
     }
     
@@ -111,15 +118,13 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const videoLocalPath = req.files.videoFile[0].path;
     const thumbnailLocalPath = req.files.thumbnail[0].path;
     
-    console.log("File paths:", { videoLocalPath, thumbnailLocalPath });
-    
     try {
-        // Upload to cloudinary
+        // Upload to Cloudinary
         const videoUpload = await uploadOnCloudinary(videoLocalPath);
         const thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
         
         if (!videoUpload) {
-            throw new ApiError(500, "Error uploading video file to Cloudinary");
+            throw new ApiError(500, "Error uploading video to Cloudinary");
         }
         
         if (!thumbnailUpload) {
@@ -129,37 +134,47 @@ const publishAVideo = asyncHandler(async (req, res) => {
         console.log("Cloudinary uploads successful");
         
         // Create video document
+        // IMPORTANT: Use "Title" (capital T) to match your video.models.js schema
         const video = await Video.create({
             videoFile: videoUpload.url,
             thumbnail: thumbnailUpload.url,
-            Title,
-            description,
+            Title: videoTitle,  // ✅ Capital T + correct variable
+            description: description,
             duration: videoUpload.duration || 0,
             owner: req.user._id,
             isPublished: true
         });
         
-        // Cleanup temp files after successful upload (optional)
-        const fs = await import('fs');
-        if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
-        if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+        console.log("Video created:", video._id);
+        
+        // Cleanup temp files
+        try {
+            const fs = await import('fs');
+            if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
+            if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+        } catch (e) {
+            console.error("Cleanup error:", e);
+        }
         
         return res.status(201).json(
             new ApiResponse(201, video, "Video published successfully")
         );
         
     } catch (error) {
-        console.error("Video upload error:", error);
+        console.error("Video upload error:", error.message);
         
-        // Cleanup temp files on error (optional)
-        const fs = await import('fs');
-        if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
-        if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+        // Cleanup on error
+        try {
+            const fs = await import('fs');
+            if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
+            if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+        } catch (e) {
+            console.error("Cleanup error:", e);
+        }
         
         throw new ApiError(500, error.message || "Video upload failed");
     }
 });
-
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
