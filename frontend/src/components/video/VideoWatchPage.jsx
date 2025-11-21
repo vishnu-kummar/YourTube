@@ -8,39 +8,37 @@ import {
 } from '../common/Icons';
 import { formatViews, timeAgo, formatDuration } from '../../utils/helpers';
 
-const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
+const VideoWatchPage = ({ video, user, onClose }) => {
+  // Current video being watched (can change when clicking suggested videos)
+  const [currentVideo, setCurrentVideo] = useState(video);
   const [allVideos, setAllVideos] = useState([]);
-  const [videoDetails, setVideoDetails] = useState(video);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscriberCount, setSubscriberCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [videoKey, setVideoKey] = useState(0); // Force video element to remount
   
-  // Watch history tracking
+  // Watch history tracking refs
   const videoRef = useRef(null);
   const intervalRef = useRef(null);
   const lastSavedTimeRef = useRef(0);
 
+  // Load video details when currentVideo changes
   useEffect(() => {
-    loadVideoDetails();
-    loadSuggestedVideos();
+    if (currentVideo?._id) {
+      loadVideoDetails(currentVideo._id);
+      loadSuggestedVideos(currentVideo._id);
+    }
     
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [video._id]);
-
-  // Re-load suggested videos when videoDetails changes (to filter out current video)
-  useEffect(() => {
-    if (videoDetails?._id) {
-      setAllVideos(prev => prev.filter(v => v._id !== videoDetails._id));
-    }
-  }, [videoDetails?._id]);
+  }, [currentVideo?._id]);
 
   // Watch history tracking
   useEffect(() => {
-    if (!user || !video) return;
+    if (!user || !currentVideo) return;
 
     const saveProgress = async () => {
       const el = videoRef.current;
@@ -48,12 +46,16 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
       const t = Math.floor(el.currentTime);
       if (Math.abs(t - lastSavedTimeRef.current) < 5) return;
       try {
-        await apiService.updateWatchHistory(video._id, t);
+        await apiService.updateWatchHistory(currentVideo._id, t);
         lastSavedTimeRef.current = t;
-      } catch (e) { console.error('Watch history error:', e); }
+        console.log(`📊 Watch progress saved: ${t}s`);
+      } catch (e) { 
+        console.error('Watch history error:', e); 
+      }
     };
 
     intervalRef.current = setInterval(saveProgress, 10000);
+    
     const el = videoRef.current;
     if (el) {
       el.addEventListener('pause', saveProgress);
@@ -61,89 +63,99 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
     }
 
     return () => {
-      clearInterval(intervalRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
       saveProgress();
       if (el) {
         el.removeEventListener('pause', saveProgress);
         el.removeEventListener('ended', saveProgress);
       }
     };
-  }, [video, user]);
+  }, [currentVideo?._id, user]);
 
-  const loadVideoDetails = async () => {
+  const loadVideoDetails = async (videoId) => {
     try {
-      const res = await apiService.getVideoById(video._id);
-      setVideoDetails(res.data);
-      setLikesCount(res.data.likesCount || 0);
-      setIsLiked(res.data.isLiked || false);
+      const res = await apiService.getVideoById(videoId);
+      const videoData = res.data;
       
-      if (res.data.owner?._id && user) {
-        const subRes = await apiService.checkSubscriptionStatus(res.data.owner._id);
-        setIsSubscribed(subRes.data?.isSubscribed || false);
+      setCurrentVideo(videoData);
+      setLikesCount(videoData.likesCount || 0);
+      setIsLiked(videoData.isLiked || false);
+      
+      // Check subscription status
+      if (videoData.owner?._id && user) {
+        try {
+          const subRes = await apiService.checkSubscriptionStatus(videoData.owner._id);
+          setIsSubscribed(subRes.data?.isSubscribed || false);
+        } catch (e) {
+          console.error('Subscription check error:', e);
+        }
       }
-    } catch (e) { console.error('Error loading video:', e); }
+    } catch (e) { 
+      console.error('Error loading video:', e); 
+    }
   };
 
-  const loadSuggestedVideos = async () => {
+  const loadSuggestedVideos = async (excludeVideoId) => {
     try {
       setLoading(true);
       const res = await apiService.getAllVideos(1, 15);
-      const filtered = (res.data.docs || []).filter(v => v._id !== video._id);
+      const filtered = (res.data.docs || []).filter(v => v._id !== excludeVideoId);
       setAllVideos(filtered);
-    } catch (e) { console.error('Error loading suggestions:', e); }
-    finally { setLoading(false); }
+    } catch (e) { 
+      console.error('Error loading suggestions:', e); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleLike = async () => {
-    if (!user) { alert('Please login to like videos'); return; }
+    if (!user) { 
+      alert('Please login to like videos'); 
+      return; 
+    }
     try {
-      await apiService.toggleVideoLike(video._id);
+      await apiService.toggleVideoLike(currentVideo._id);
       setIsLiked(!isLiked);
       setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
-    } catch (e) { console.error('Like error:', e); }
+    } catch (e) { 
+      console.error('Like error:', e); 
+    }
   };
 
   const handleSubscribe = async () => {
-    if (!user) { alert('Please login to subscribe'); return; }
-    if (!videoDetails?.owner?._id) return;
+    if (!user) { 
+      alert('Please login to subscribe'); 
+      return; 
+    }
+    if (!currentVideo?.owner?._id) return;
     try {
-      await apiService.toggleSubscription(videoDetails.owner._id);
+      await apiService.toggleSubscription(currentVideo.owner._id);
       setIsSubscribed(!isSubscribed);
       setSubscriberCount(prev => isSubscribed ? prev - 1 : prev + 1);
-    } catch (e) { console.error('Subscribe error:', e); }
-  };
-
-  const handleVideoClick = async (newVideo) => {
-    // Update selected video
-    setVideoDetails(newVideo);
-    setLikesCount(newVideo.likesCount || 0);
-    setIsLiked(newVideo.isLiked || false);
-    
-    // Reset watch progress tracking
-    lastSavedTimeRef.current = 0;
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Notify parent to update URL/state if needed
-    if (onVideoSelect) onVideoSelect(newVideo);
-    
-    // Load full video details
-    try {
-      const res = await apiService.getVideoById(newVideo._id);
-      setVideoDetails(res.data);
-      setLikesCount(res.data.likesCount || 0);
-      setIsLiked(res.data.isLiked || false);
-      
-      // Check subscription status for new video's owner
-      if (res.data.owner?._id && user) {
-        const subRes = await apiService.checkSubscriptionStatus(res.data.owner._id);
-        setIsSubscribed(subRes.data?.isSubscribed || false);
-      }
-    } catch (e) {
-      console.error('Error loading video:', e);
+    } catch (e) { 
+      console.error('Subscribe error:', e); 
     }
   };
+
+  // Handle clicking on a suggested video
+  const handleSuggestedVideoClick = (newVideo) => {
+    console.log('Switching to video:', newVideo.Title);
+    
+    // Reset tracking
+    lastSavedTimeRef.current = 0;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    // Update state to new video
+    setCurrentVideo(newVideo);
+    setVideoKey(prev => prev + 1); // Force video element to remount
+    
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (!currentVideo) return null;
 
   return (
     <div className="video-watch-page">
@@ -155,30 +167,32 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
       <div className="watch-page-content">
         {/* Left Section - Video + Info + Comments */}
         <div className="watch-main-section">
-          {/* Video Player */}
+          {/* Video Player - key prop forces remount when video changes */}
           <div className="watch-video-container">
             <video
+              key={videoKey}
               ref={videoRef}
               controls
               autoPlay
               className="watch-video-player"
-              poster={videoDetails?.thumbnail}
+              poster={currentVideo?.thumbnail}
             >
-              <source src={videoDetails?.videoFile} type="video/mp4" />
+              <source src={currentVideo?.videoFile} type="video/mp4" />
+              Your browser does not support the video tag.
             </video>
           </div>
 
           {/* Video Info */}
           <div className="watch-video-info">
-            <h1 className="watch-video-title">{videoDetails?.Title}</h1>
+            <h1 className="watch-video-title">{currentVideo?.Title}</h1>
             
             <div className="watch-video-meta">
               <div className="watch-meta-left">
                 <span className="watch-views">
-                  <EyeIcon /> {formatViews(videoDetails?.views || 0)} views
+                  <EyeIcon /> {formatViews(currentVideo?.views || 0)} views
                 </span>
                 <span className="watch-date">
-                  <ClockIcon /> {timeAgo(videoDetails?.createdAt)}
+                  <ClockIcon /> {timeAgo(currentVideo?.createdAt)}
                 </span>
               </div>
               
@@ -199,17 +213,17 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
             <div className="watch-channel-section">
               <div className="watch-channel-info">
                 <img 
-                  src={videoDetails?.owner?.avatar || 'https://via.placeholder.com/48'} 
-                  alt={videoDetails?.owner?.username}
+                  src={currentVideo?.owner?.avatar || 'https://via.placeholder.com/48'} 
+                  alt={currentVideo?.owner?.username}
                   className="watch-channel-avatar"
                 />
                 <div className="watch-channel-details">
-                  <h3>{videoDetails?.owner?.username || 'Unknown Channel'}</h3>
+                  <h3>{currentVideo?.owner?.username || 'Unknown Channel'}</h3>
                   <span>{subscriberCount} subscribers</span>
                 </div>
               </div>
               
-              {user && videoDetails?.owner?._id !== user._id && (
+              {user && currentVideo?.owner?._id !== user._id && (
                 <button 
                   className={`watch-subscribe-btn ${isSubscribed ? 'subscribed' : ''}`}
                   onClick={handleSubscribe}
@@ -221,13 +235,17 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
 
             {/* Description */}
             <div className="watch-description">
-              <p>{videoDetails?.description}</p>
+              <p>{currentVideo?.description}</p>
             </div>
           </div>
 
-          {/* Comments Section */}
+          {/* Comments Section - key forces remount when video changes */}
           <div className="watch-comments-section">
-            <CommentSection videoId={video._id} user={user} />
+            <CommentSection 
+              key={currentVideo._id} 
+              videoId={currentVideo._id} 
+              user={user} 
+            />
           </div>
         </div>
 
@@ -245,7 +263,7 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
                 <div 
                   key={v._id} 
                   className="suggested-video-card"
-                  onClick={() => handleVideoClick(v)}
+                  onClick={() => handleSuggestedVideoClick(v)}
                 >
                   <div className="suggested-thumbnail">
                     <img src={v.thumbnail} alt={v.Title} />
