@@ -31,6 +31,13 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
     };
   }, [video._id]);
 
+  // Re-load suggested videos when videoDetails changes (to filter out current video)
+  useEffect(() => {
+    if (videoDetails?._id) {
+      setAllVideos(prev => prev.filter(v => v._id !== videoDetails._id));
+    }
+  }, [videoDetails?._id]);
+
   // Watch history tracking
   useEffect(() => {
     if (!user || !video) return;
@@ -106,8 +113,36 @@ const VideoWatchPage = ({ video, user, onClose, onVideoSelect }) => {
     } catch (e) { console.error('Subscribe error:', e); }
   };
 
-  const handleVideoClick = (newVideo) => {
+  const handleVideoClick = async (newVideo) => {
+    // Update selected video
+    setVideoDetails(newVideo);
+    setLikesCount(newVideo.likesCount || 0);
+    setIsLiked(newVideo.isLiked || false);
+    
+    // Reset watch progress tracking
+    lastSavedTimeRef.current = 0;
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Notify parent to update URL/state if needed
     if (onVideoSelect) onVideoSelect(newVideo);
+    
+    // Load full video details
+    try {
+      const res = await apiService.getVideoById(newVideo._id);
+      setVideoDetails(res.data);
+      setLikesCount(res.data.likesCount || 0);
+      setIsLiked(res.data.isLiked || false);
+      
+      // Check subscription status for new video's owner
+      if (res.data.owner?._id && user) {
+        const subRes = await apiService.checkSubscriptionStatus(res.data.owner._id);
+        setIsSubscribed(subRes.data?.isSubscribed || false);
+      }
+    } catch (e) {
+      console.error('Error loading video:', e);
+    }
   };
 
   return (
