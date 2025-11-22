@@ -91,18 +91,101 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 // COPY THIS ENTIRE FUNCTION and replace your publishAVideo in video.controllers.js
 
+// const publishAVideo = asyncHandler(async (req, res) => {
+//     // Get title from request body - handle both cases from frontend
+//     // Frontend might send "title" or "Title"
+//     const videoTitle = req.body.Title || req.body.title;
+//     const { description } = req.body;
+    
+//     console.log("=== PUBLISH VIDEO ===");
+//     console.log("Request body:", req.body);
+//     console.log("Video Title:", videoTitle);
+//     console.log("Description:", description);
+    
+//     // Validation
+//     if (!videoTitle || !description) {
+//         throw new ApiError(400, "Title and description are required");
+//     }
+    
+//     if (!req.files?.videoFile?.[0]) {
+//         throw new ApiError(400, "Video file is required");
+//     }
+    
+//     if (!req.files?.thumbnail?.[0]) {
+//         throw new ApiError(400, "Thumbnail is required");
+//     }
+    
+//     const videoLocalPath = req.files.videoFile[0].path;
+//     const thumbnailLocalPath = req.files.thumbnail[0].path;
+    
+//     try {
+//         // Upload to Cloudinary
+//         const videoUpload = await uploadOnCloudinary(videoLocalPath);
+//         const thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
+        
+//         if (!videoUpload) {
+//             throw new ApiError(500, "Error uploading video to Cloudinary");
+//         }
+        
+//         if (!thumbnailUpload) {
+//             throw new ApiError(500, "Error uploading thumbnail to Cloudinary");
+//         }
+        
+//         console.log("Cloudinary uploads successful");
+        
+//         // Create video document
+//         // IMPORTANT: Use "Title" (capital T) to match your video.models.js schema
+//         const video = await Video.create({
+//             videoFile: videoUpload.url,
+//             thumbnail: thumbnailUpload.url,
+//             Title: videoTitle,  // ✅ Capital T + correct variable
+//             description: description,
+//             duration: videoUpload.duration || 0,
+//             owner: req.user._id,
+//             isPublished: true
+//         });
+        
+//         console.log("Video created:", video._id);
+        
+//         // Cleanup temp files
+//         try {
+//             const fs = await import('fs');
+//             if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
+//             if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+//         } catch (e) {
+//             console.error("Cleanup error:", e);
+//         }
+        
+//         return res.status(201).json(
+//             new ApiResponse(201, video, "Video published successfully")
+//         );
+        
+//     } catch (error) {
+//         console.error("Video upload error:", error.message);
+        
+//         // Cleanup on error
+//         try {
+//             const fs = await import('fs');
+//             if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);
+//             if (fs.existsSync(thumbnailLocalPath)) fs.unlinkSync(thumbnailLocalPath);
+//         } catch (e) {
+//             console.error("Cleanup error:", e);
+//         }
+        
+//         throw new ApiError(500, error.message || "Video upload failed");
+//     }
+// });
+// Update your publishAVideo function in video.controllers.js to handle tags
+
 const publishAVideo = asyncHandler(async (req, res) => {
-    // Get title from request body - handle both cases from frontend
-    // Frontend might send "title" or "Title"
     const videoTitle = req.body.Title || req.body.title;
-    const { description } = req.body;
+    const { description, tags } = req.body;
     
-    console.log("=== PUBLISH VIDEO ===");
-    console.log("Request body:", req.body);
-    console.log("Video Title:", videoTitle);
+    console.log("Body received:", req.body);
+    console.log("Title:", videoTitle);
     console.log("Description:", description);
+    console.log("Tags:", tags);
     
-    // Validation
     if (!videoTitle || !description) {
         throw new ApiError(400, "Title and description are required");
     }
@@ -119,33 +202,45 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const thumbnailLocalPath = req.files.thumbnail[0].path;
     
     try {
-        // Upload to Cloudinary
         const videoUpload = await uploadOnCloudinary(videoLocalPath);
         const thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath);
         
-        if (!videoUpload) {
-            throw new ApiError(500, "Error uploading video to Cloudinary");
+        if (!videoUpload || !thumbnailUpload) {
+            throw new ApiError(500, "Error uploading to Cloudinary");
         }
         
-        if (!thumbnailUpload) {
-            throw new ApiError(500, "Error uploading thumbnail to Cloudinary");
+        // Parse tags - can be comma-separated string or array
+        let parsedTags = [];
+        if (tags) {
+            if (typeof tags === 'string') {
+                // Handle comma-separated string: "sports, cricket, india"
+                parsedTags = tags.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
+            } else if (Array.isArray(tags)) {
+                parsedTags = tags.map(tag => tag.trim().toLowerCase()).filter(Boolean);
+            }
         }
         
-        console.log("Cloudinary uploads successful");
+        // Also extract tags from description hashtags: "#sports #cricket"
+        const hashtagRegex = /#(\w+)/g;
+        const descriptionTags = [];
+        let match;
+        while ((match = hashtagRegex.exec(description)) !== null) {
+            descriptionTags.push(match[1].toLowerCase());
+        }
         
-        // Create video document
-        // IMPORTANT: Use "Title" (capital T) to match your video.models.js schema
+        // Combine and deduplicate tags
+        const allTags = [...new Set([...parsedTags, ...descriptionTags])];
+        
         const video = await Video.create({
             videoFile: videoUpload.url,
             thumbnail: thumbnailUpload.url,
-            Title: videoTitle,  // ✅ Capital T + correct variable
-            description: description,
+            Title: videoTitle,
+            description,
             duration: videoUpload.duration || 0,
             owner: req.user._id,
-            isPublished: true
+            isPublished: true,
+            tags: allTags // Include tags
         });
-        
-        console.log("Video created:", video._id);
         
         // Cleanup temp files
         try {
@@ -161,9 +256,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         );
         
     } catch (error) {
-        console.error("Video upload error:", error.message);
+        console.error("Video upload error:", error);
         
-        // Cleanup on error
         try {
             const fs = await import('fs');
             if (fs.existsSync(videoLocalPath)) fs.unlinkSync(videoLocalPath);

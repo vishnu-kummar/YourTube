@@ -59,7 +59,31 @@ playlists: [{
 
 refreshToken:{    // for this we install jsonwebtoken [npm i jsonwebtoken] which is a bear token (it's like key jo v token dega use data mil jaega)
 	type:String     // we will write code for token in env
+},
+
+
+
+// User preferences for new user onboarding (Cold Start)
+preferences: {
+    selectedTags: [{
+        type: String,
+        lowercase: true,
+        trim: true
+    }],
+    hasCompletedOnboarding: {
+        type: Boolean,
+        default: false
+    }
+},
+
+// Computed tag scores (updated periodically or on-demand)
+tagScores: {
+    type: Map,
+    of: Number,
+    default: new Map()
 }
+
+
 
 
 },{timestamps:true})
