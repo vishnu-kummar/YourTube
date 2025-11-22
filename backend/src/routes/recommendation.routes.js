@@ -6,12 +6,12 @@ import {
     saveUserPreferences,
     getTrendingVideos
 } from "../controllers/recommendation.controllers.js";
-import { verifyJWT } from "../middlewares/auth.middlewares.js";
+import { verifyJWT, optionalAuth } from "../middlewares/auth.middlewares.js";
 
 const router = Router();
 
-// Public routes
-router.route("/feed").get(getRecommendedVideos); // Works for both logged-in and anonymous
+// Public routes with optional auth (to identify logged-in users)
+router.route("/feed").get(optionalAuth, getRecommendedVideos); // Uses optionalAuth to detect user
 router.route("/tags").get(getAvailableTags);
 router.route("/trending").get(getTrendingVideos);
 
@@ -20,5 +20,7 @@ router.route("/preferences").post(verifyJWT, saveUserPreferences);
 
 // Optional: Get personalized feed (requires login)
 router.route("/personalized").get(verifyJWT, getRecommendedVideos);
+
+router.route("/migrate-tags").post(verifyJWT, migrateVideoTags);
 
 export default router;

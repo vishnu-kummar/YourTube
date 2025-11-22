@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 import { Video } from "../models/video.models.js";
 import { User } from "../models/user.models.js";
-import { WatchHistory } from "../models/watchHistory.model.js";
+import { WatchHistory } from "../models/WatchHistory.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -94,6 +94,10 @@ export const getRecommendedVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const userId = req.user?._id;
 
+    console.log("=== RECOMMENDATION FEED ===");
+    console.log("User ID:", userId || "Not logged in");
+    console.log("Page:", page, "Limit:", limit);
+
     // Get all published videos
     let allVideos = await Video.aggregate([
         { $match: { isPublished: true } },
@@ -129,6 +133,9 @@ export const getRecommendedVideos = asyncHandler(async (req, res) => {
     // Check if user has watch history
     const watchHistoryCount = await WatchHistory.countDocuments({ userId });
     const user = await User.findById(userId);
+
+    console.log("Watch History Count:", watchHistoryCount);
+    console.log("User preferences:", user?.preferences);
 
     // NEW USER (Cold Start) - No watch history
     if (watchHistoryCount === 0) {
@@ -201,7 +208,10 @@ export const getRecommendedVideos = asyncHandler(async (req, res) => {
     }
 
     // OLD USER (Has Watch History) - Personalized Recommendations
+    console.log("Old user detected - calculating personalized feed");
     const userTagScores = await calculateUserTagScores(userId);
+    
+    console.log("User Tag Scores:", Object.fromEntries(userTagScores));
     
     // Update user's tag scores in database (optional, for caching)
     await User.findByIdAndUpdate(userId, { tagScores: userTagScores });
@@ -325,5 +335,78 @@ export const getTrendingVideos = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new ApiResponse(200, trendingVideos, "Trending videos fetched successfully")
+    );
+});
+
+
+/**
+ * ONE-TIME MIGRATION: Extract tags from existing video descriptions
+ * Run this once to populate tags for existing videos
+ */
+export const migrateVideoTags = asyncHandler(async (req, res) => {
+    console.log("Starting tag migration...");
+    
+    // Get all videos without tags or with empty tags
+    const videos = await Video.find({
+        $or: [
+            { tags: { $exists: false } },
+            { tags: { $size: 0 } }
+        ]
+    });
+    
+    console.log(`Found ${videos.length} videos to process`);
+    
+    let updatedCount = 0;
+    
+    for (const video of videos) {
+        const tags = [];
+        
+        // Extract hashtags from description
+        if (video.description) {
+            const hashtagRegex = /#(\w+)/g;
+            let match;
+            while ((match = hashtagRegex.exec(video.description)) !== null) {
+                tags.push(match[1].toLowerCase());
+            }
+        }
+        
+        // Extract keywords from title (optional - basic word extraction)
+        if (video.Title) {
+            const titleWords = video.Title.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '')
+                .split(/\s+/)
+                .filter(word => word.length > 3); // Only words > 3 chars
+            
+            // Add common category keywords if found in title
+            const categoryKeywords = [
+                'cricket', 'sports', 'football', 'basketball', 'gaming',
+                'music', 'movie', 'comedy', 'cooking', 'travel', 'tech',
+                'programming', 'javascript', 'python', 'tutorial', 'review',
+                'vlog', 'news', 'entertainment', 'fitness', 'nature'
+            ];
+            
+            titleWords.forEach(word => {
+                if (categoryKeywords.includes(word) && !tags.includes(word)) {
+                    tags.push(word);
+                }
+            });
+        }
+        
+        if (tags.length > 0) {
+            await Video.findByIdAndUpdate(video._id, { 
+                tags: [...new Set(tags)] // Remove duplicates
+            });
+            updatedCount++;
+            console.log(`Updated video "${video.Title}" with tags:`, tags);
+        }
+    }
+    
+    console.log(`Migration complete. Updated ${updatedCount} videos.`);
+    
+    return res.status(200).json(
+        new ApiResponse(200, { 
+            totalVideos: videos.length,
+            updatedVideos: updatedCount 
+        }, "Tag migration completed")
     );
 });

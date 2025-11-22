@@ -1,3 +1,4 @@
+// video.routes.js - Updated with optionalAuth for public routes
 import { Router } from 'express';
 import {
     deleteVideo,
@@ -7,20 +8,20 @@ import {
     togglePublishStatus,
     updateWatchHistory     
 } from "../controllers/video.controllers.js"
-import {verifyJWT} from "../middlewares/auth.middlewares.js"
-import {upload} from "../middlewares/multer.middlewares.js"
+import { verifyJWT, optionalAuth } from "../middlewares/auth.middlewares.js" // Add optionalAuth
+import { upload } from "../middlewares/multer.middlewares.js"
 
 const router = Router();
 
 // ============================================
-// CRITICAL: ROUTE ORDER MATTERS!!!
-// Static/specific routes MUST come BEFORE dynamic /:param routes
+// ROUTE ORDER MATTERS - Static routes first
 // ============================================
 
-// 1. GET all videos (Public)
-router.route("/").get(getAllVideos);
+// Public route with optional auth - Get all videos
+// optionalAuth allows identifying logged-in users without requiring login
+router.route("/").get(optionalAuth, getAllVideos);
 
-// 2. POST upload video (Protected) - MUST be on "/" path
+// Protected route - Upload video
 router.route("/").post(
     verifyJWT,
     upload.fields([
@@ -30,16 +31,17 @@ router.route("/").post(
     publishAVideo
 );
 
-// 3. PATCH watch history (Protected) - BEFORE /:videoId
+// Protected route - Update watch history
 router.route("/watch-update").patch(verifyJWT, updateWatchHistory);
 
-// 4. PATCH toggle publish (Protected) - BEFORE general /:videoId
+// Protected route - Toggle publish status
 router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 
-// 5. Dynamic /:videoId routes (MUST BE LAST)
+// Public route with optional auth - View single video
+// optionalAuth allows checking if user liked the video
 router.route("/:videoId")
-    .get(getVideoById)                      // Public - view video
-    .delete(verifyJWT, deleteVideo)         // Protected - delete video
-    .patch(verifyJWT, upload.single("thumbnail")); // Protected - update thumbnail
+    .get(optionalAuth, getVideoById)  // Use optionalAuth here
+    .delete(verifyJWT, deleteVideo)
+    .patch(verifyJWT, upload.single("thumbnail"));
 
 export default router;
