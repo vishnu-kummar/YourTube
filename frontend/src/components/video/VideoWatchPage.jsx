@@ -98,7 +98,7 @@ const VideoWatchPage = ({ video, user, onClose }) => {
   const loadSuggestedVideos = async (excludeVideoId) => {
     try {
       setLoading(true);
-      const res = await apiService.getAllVideos(1, 15);
+      const res = await apiService.getAllVideos(1, 25);
       const filtered = (res.data.docs || []).filter(v => v._id !== excludeVideoId);
       setAllVideos(filtered);
     } catch (e) { 

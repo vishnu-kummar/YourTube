@@ -16,7 +16,7 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
   const loadVideos = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getAllVideos(1, 20, searchQuery);
+      const response = await apiService.getAllVideos(1, 50, searchQuery);
       setVideos(response.data.docs || []);
     } catch (error) {
       console.error('Failed to load videos:', error);
