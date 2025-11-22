@@ -3375,3 +3375,297 @@
     font-size: 0.8rem;
   }
 }
+
+
+
+
+/* =============================================
+   ONBOARDING MODAL STYLES - Add to App.css
+   ============================================= */
+
+.onboarding-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.onboarding-modal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid #333;
+}
+
+.onboarding-header {
+  padding: 2rem 2rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid #333;
+}
+
+.onboarding-header h2 {
+  color: white;
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.onboarding-header p {
+  color: #aaa;
+  margin: 0;
+}
+
+.onboarding-error {
+  background: #ff4757;
+  color: white;
+  padding: 0.75rem 1rem;
+  margin: 1rem 2rem 0;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.onboarding-categories {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tag-category h3 {
+  color: white;
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-btn {
+  padding: 0.5rem 1rem;
+  background: #272727;
+  border: 2px solid #444;
+  border-radius: 2rem;
+  color: #ddd;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-btn:hover {
+  border-color: #666;
+  background: #333;
+}
+
+.tag-btn.selected {
+  background: linear-gradient(135deg, #9333ea, #ec4899);
+  border-color: transparent;
+  color: white;
+}
+
+.tag-btn.selected:hover {
+  opacity: 0.9;
+}
+
+.onboarding-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.selected-count {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.onboarding-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.skip-btn {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 2px solid #444;
+  border-radius: 2rem;
+  color: #aaa;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skip-btn:hover {
+  border-color: #666;
+  color: white;
+}
+
+.continue-btn {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #9333ea, #ec4899);
+  border: none;
+  border-radius: 2rem;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.continue-btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
+}
+
+.continue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .onboarding-modal {
+    max-height: 95vh;
+  }
+  
+  .onboarding-header,
+  .onboarding-categories,
+  .onboarding-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .onboarding-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .onboarding-actions {
+    width: 100%;
+  }
+  
+  .skip-btn,
+  .continue-btn {
+    flex: 1;
+  }
+}
+
+
+
+
+/* =============================================
+   FEED INDICATOR STYLES - Add to App.css
+   ============================================= */
+
+.feed-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-interests {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  flex-wrap: wrap;
+}
+
+.interest-tag {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.2), rgba(236, 72, 153, 0.2));
+  color: #a855f7;
+  padding: 0.25rem 0.625rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.personalized-badge {
+  background: linear-gradient(135deg, #9333ea, #ec4899);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.video-list-header-info {
+  max-width: 80rem;
+  margin: 0 auto 2rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.video-list-header-info h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.video-count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Video Tags Display on Cards */
+.video-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.video-tag {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.video-tag:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .video-list-header-info {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .user-interests {
+    margin-top: 0.25rem;
+  }
+  
+  .personalized-badge {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}

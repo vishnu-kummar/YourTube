@@ -260,6 +260,42 @@ export const apiService = {
     });
   },
 
+
+
+
+
+  // ========== RECOMMENDATION API METHODS ==========
+
+// Get personalized/recommended feed
+getRecommendedVideos: async (page = 1, limit = 20) => {
+  const params = new URLSearchParams({ page, limit });
+  return makeRequest(`${API_BASE_URL}/recommendations/feed?${params}`);
+},
+
+// Get available tags for onboarding
+getAvailableTags: async () => {
+  return makeRequest(`${API_BASE_URL}/recommendations/tags`);
+},
+
+// Save user preferences (onboarding)
+saveUserPreferences: async (selectedTags) => {
+  return makeRequest(`${API_BASE_URL}/recommendations/preferences`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selectedTags })
+  });
+},
+
+// Get trending videos
+getTrendingVideos: async (limit = 10) => {
+  return makeRequest(`${API_BASE_URL}/recommendations/trending?limit=${limit}`);
+},
+
+
+
+
+
+
   changePassword: async (passwordData) => {
     return makeRequest(`${API_BASE_URL}/users/change-password`, {
       method: 'POST',
