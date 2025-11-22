@@ -1,7 +1,6 @@
-// src/components/video/VideoList.jsx - Updated with Recommendations
+// src/components/video/VideoList.jsx
 import React, { useState, useEffect } from 'react';
 import VideoCard from './VideoCard';
-import OnboardingModal from '../common/OnboardingModal';
 import { apiService } from '../../services/apiService';
 import { SearchIcon, VideoIcon } from '../common/Icons';
 
@@ -10,7 +9,6 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [feedInfo, setFeedInfo] = useState(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadVideos();
@@ -23,35 +21,34 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
       let response;
       
       if (searchQuery) {
-        // If searching, use regular video search
+        // If searching, use regular search
         response = await apiService.getAllVideos(1, 20, searchQuery);
         setFeedInfo({ feedType: 'search', isPersonalized: false });
+        setVideos(response.data.docs || []);
       } else {
-        // Use recommendation feed
-        response = await apiService.getRecommendedVideos(1, 20);
-        setFeedInfo({
-          feedType: response.data.feedType,
-          isPersonalized: response.data.isPersonalized,
-          userTopTags: response.data.userTopTags,
-          needsOnboarding: response.data.needsOnboarding
-        });
-        
-        // Show onboarding for new logged-in users
-        if (user && response.data.needsOnboarding) {
-          setShowOnboarding(true);
+        // Use recommendation endpoint
+        try {
+          response = await apiService.getRecommendedVideos(1, 20);
+          console.log("Recommendation response:", response);
+          
+          setFeedInfo({
+            feedType: response.data?.feedType || 'unknown',
+            isPersonalized: response.data?.isPersonalized || false,
+            userTopTags: response.data?.userTopTags || [],
+            needsOnboarding: response.data?.needsOnboarding || false
+          });
+          setVideos(response.data?.docs || []);
+        } catch (recError) {
+          console.error("Recommendation failed, falling back:", recError);
+          // Fallback to regular videos
+          response = await apiService.getAllVideos(1, 20);
+          setFeedInfo({ feedType: 'popular', isPersonalized: false });
+          setVideos(response.data.docs || []);
         }
       }
-      
-      setVideos(response.data.docs || []);
     } catch (error) {
       console.error('Failed to load videos:', error);
-      // Fallback to regular video list
-      try {
-        const fallback = await apiService.getAllVideos(1, 20, searchQuery);
-        setVideos(fallback.data.docs || []);
-      } catch (e) {
-        console.error('Fallback also failed:', e);
-      }
+      setVideos([]);
     } finally {
       setLoading(false);
     }
@@ -68,12 +65,10 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
       setVideos(prevVideos => 
         prevVideos.map(video => {
           if (video._id === videoId) {
-            const currentLikes = video.likesCount || 0;
-            const isCurrentlyLiked = video.isLikedByUser || false;
             return {
               ...video,
-              likesCount: isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1,
-              isLikedByUser: !isCurrentlyLiked
+              likesCount: video.isLikedByUser ? (video.likesCount || 1) - 1 : (video.likesCount || 0) + 1,
+              isLikedByUser: !video.isLikedByUser
             };
           }
           return video;
@@ -92,16 +87,6 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
     );
   };
 
-  const handleOnboardingComplete = (selectedTags) => {
-    setShowOnboarding(false);
-    // Reload videos with personalized feed
-    loadVideos();
-  };
-
-  const handleOnboardingSkip = () => {
-    setShowOnboarding(false);
-  };
-
   // Get feed title based on type
   const getFeedTitle = () => {
     if (searchQuery) return `Results for "${searchQuery}"`;
@@ -110,10 +95,8 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
     switch (feedInfo.feedType) {
       case 'content_based':
         return '🎯 Recommended For You';
-      case 'preference_based':
-        return '✨ Based on Your Interests';
-      case 'trending_popular':
-        return '🔥 Trending & Popular';
+      case 'popular_new_user':
+        return '🔥 Popular Videos';
       case 'popular':
         return '📈 Popular Videos';
       default:
@@ -132,14 +115,6 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
 
   return (
     <div className="video-list-container">
-      {/* Onboarding Modal for New Users */}
-      {showOnboarding && (
-        <OnboardingModal 
-          onComplete={handleOnboardingComplete}
-          onSkip={handleOnboardingSkip}
-        />
-      )}
-
       <div className="video-list-header">
         <div className="search-container">
           <h1>Discover Amazing Videos</h1>
@@ -169,7 +144,7 @@ const VideoList = ({ onLike, onPlay, user, onComment }) => {
             <div className="video-list-header-info">
               <div className="feed-title-section">
                 <h2>{getFeedTitle()}</h2>
-                {feedInfo?.isPersonalized && feedInfo?.userTopTags && (
+                {feedInfo?.isPersonalized && feedInfo?.userTopTags?.length > 0 && (
                   <div className="user-interests">
                     <span>Based on: </span>
                     {feedInfo.userTopTags.slice(0, 3).map(item => (

@@ -67,6 +67,41 @@ export const apiService = {
     return makeRequest(`${API_BASE_URL}/users/current-user`);
   },
 
+
+
+  // ========== RECOMMENDATION API METHODS ==========
+
+// Get personalized/recommended feed
+getRecommendedVideos: async (page = 1, limit = 20) => {
+  const params = new URLSearchParams({ page, limit });
+  return makeRequest(`${API_BASE_URL}/videos/recommended?${params}`);
+},
+
+// Get available tags for onboarding
+getAvailableTags: async () => {
+  return makeRequest(`${API_BASE_URL}/recommendations/tags`);
+},
+
+// Save user preferences (onboarding)
+saveUserPreferences: async (selectedTags) => {
+  return makeRequest(`${API_BASE_URL}/recommendations/preferences`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selectedTags })
+  });
+},
+
+// Get trending videos
+getTrendingVideos: async (limit = 10) => {
+  return makeRequest(`${API_BASE_URL}/recommendations/trending?limit=${limit}`);
+},
+
+
+
+
+
+
+
   // Videos
   getAllVideos: async (page = 1, limit = 10, query = '') => {
     const params = new URLSearchParams({ page, limit, query });
@@ -259,42 +294,6 @@ export const apiService = {
       body: JSON.stringify(updateData)
     });
   },
-
-
-
-
-
-  // ========== RECOMMENDATION API METHODS ==========
-
-// Get personalized/recommended feed
-getRecommendedVideos: async (page = 1, limit = 20) => {
-  const params = new URLSearchParams({ page, limit });
-  return makeRequest(`${API_BASE_URL}/recommendations/feed?${params}`);
-},
-
-// Get available tags for onboarding
-getAvailableTags: async () => {
-  return makeRequest(`${API_BASE_URL}/recommendations/tags`);
-},
-
-// Save user preferences (onboarding)
-saveUserPreferences: async (selectedTags) => {
-  return makeRequest(`${API_BASE_URL}/recommendations/preferences`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ selectedTags })
-  });
-},
-
-// Get trending videos
-getTrendingVideos: async (limit = 10) => {
-  return makeRequest(`${API_BASE_URL}/recommendations/trending?limit=${limit}`);
-},
-
-
-
-
-
 
   changePassword: async (passwordData) => {
     return makeRequest(`${API_BASE_URL}/users/change-password`, {
