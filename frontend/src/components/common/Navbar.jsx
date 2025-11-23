@@ -1,5 +1,5 @@
 import React from 'react';
-import { HomeIcon, UploadIcon, BarChartIcon, LogOutIcon, UserIcon, PlayCircleIcon, ListIcon } from './Icons';
+import { HomeIcon, UploadIcon, BarChartIcon, LogOutIcon, UserIcon, PlayCircleIcon, ListIcon,HistoryIcon } from './Icons';
 
 // Add History Icon
 const HistoryIcon = ({ className = "w-5 h-5" }) => (
