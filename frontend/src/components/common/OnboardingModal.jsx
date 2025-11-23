@@ -10,6 +10,8 @@ const TAG_CATEGORIES = {
   "⚽ Sports": ["sports", "cricket", "football", "basketball", "fitness"],
   "🍳 Food & Cooking": ["cooking", "recipes", "vegan", "baking"],
   "✈️ Travel & Vlogs": ["travel", "vlog", "adventure", "nature"],
+  "✈️ News": ["news", "media", "world"],
+  "✈️ Nature": ["jungle", "animal", "forest"],
   "📚 Education": ["education", "science", "history", "math","study"],
   "😂 Entertainment": ["comedy", "entertainment", "news", "tech"]
 };

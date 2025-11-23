@@ -31,13 +31,15 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab }) => (
           
           {user && (
             <>
-              <button 
-                onClick={() => setActiveTab('history')}
-                className={activeTab === 'history' ? 'nav-btn active' : 'nav-btn'}
+             
+               <button 
+                onClick={() => setActiveTab('upload')}
+                className={activeTab === 'upload' ? 'nav-btn active' : 'nav-btn'}
               >
-                <HistoryIcon />
-                <span>History</span>
+                <UploadIcon />
+                <span>Upload</span>
               </button>
+
 
               <button 
                 onClick={() => setActiveTab('playlists')}
@@ -48,12 +50,14 @@ const Navbar = ({ user, onLogout, activeTab, setActiveTab }) => (
               </button>
 
               <button 
-                onClick={() => setActiveTab('upload')}
-                className={activeTab === 'upload' ? 'nav-btn active' : 'nav-btn'}
+                onClick={() => setActiveTab('history')}
+                className={activeTab === 'history' ? 'nav-btn active' : 'nav-btn'}
               >
-                <UploadIcon />
-                <span>Upload</span>
+                <HistoryIcon />
+                <span>History</span>
               </button>
+
+
 
               <button 
                 onClick={() => setActiveTab('dashboard')}
